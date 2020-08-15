@@ -44,11 +44,9 @@ for doc in tristate_docs:
         if state in doc:
             print('hooray')
             data_state = state
-    try:
-        sample = tailer.head(open(doc, encoding='utf-8'), 15000)
-    except Exception as e:
-        t = 5
+
+    sample = tailer.head(open(doc, encoding='utf-8', errors='ignore'), 15000)
     working_file_name = 'C:\\Data Projects\\Tristate_Bird_Data\\' + data_state + '_data_subset.txt'
-    working_file = open(working_file_name, 'w+', encoding='utf-8')
+    working_file = open(working_file_name, 'w+')
 
     convert_data(sample, working_file)
