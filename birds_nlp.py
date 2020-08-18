@@ -50,7 +50,7 @@ def tokenize_words(comment_df):
 def fit_vectorizer(cleaned_df):
     vectorizer = TfidfVectorizer(analyzer='word', ngram_range=(1, 2), max_features=250)
     X = vectorizer.fit_transform(cleaned_df['TRIP COMMENTS'])
-    print(vectorizer.get_feature_names())
+    # print(vectorizer.get_feature_names())
 
     return X
 
@@ -101,11 +101,25 @@ def final_k_model(X, finalk):
     plt.savefig('plots\\cluster.png')
     plt.show()
 
+    return final_k_mod
+
+
+def test_final_k(model, test_set):
+    model.predict(test_set)
+
+    print(model.labels_)
+    print('ok')
+
 
 cleaned_comments_df = tokenize_words(comments_df)
 X_train = fit_vectorizer(cleaned_comments_df)
 final_k = create_clusters(X_train)
-final_k_model(X_train, final_k)
+final_model = final_k_model(X_train, final_k)
+
+cleaned_test = tokenize_words(test_comments)
+test_train = fit_vectorizer(cleaned_test)
+test_final_k(final_model, test_train)
+
 
 # use word2vec to get vectors for the comment data
 # https://stackoverflow.com/questions/49643974/how-to-do-text-classification-using-word2vec
