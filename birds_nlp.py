@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from gensim.models import Word2Vec
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -41,7 +40,7 @@ def tokenize_words(comment_df):
         clean_text.append(cleaned_row)
 
     comment_df['Tokenized Comments'] = clean_text
-    print(comments_df.head())
+    # print(comments_df.head())
 
     return comment_df
 
@@ -50,9 +49,8 @@ def tokenize_words(comment_df):
 def fit_vectorizer(cleaned_df):
     vectorizer = TfidfVectorizer(analyzer='word', ngram_range=(1, 2), max_features=250)
     X = vectorizer.fit_transform(cleaned_df['TRIP COMMENTS'])
-    # print(vectorizer.get_feature_names())
 
-    return X
+    return vectorizer, X
 
 
 # find the ideal K
@@ -72,19 +70,28 @@ def create_clusters(X):
 
     # the result of this plot shows that eight or nine might be a solid number of clusters for this set TR
     final_K = 9
+    # final_K = 5
+
     return final_K
 
 
 # create the final model and plot it
-def final_k_model(X, finalk):
+def final_k_model(vectorizer, X, finalk):
+    count = 0
     final_k_mod = KMeans(n_clusters=finalk, init='random', n_init=10, max_iter=300, tol=1e-04, random_state=0)
     final_k_mod.fit(X)
 
-    # final_score = silhouette_score(X, final_k_mod.labels_, metric='euclidean')
-    # print(final_score)
-
     # plot the results:
     centroids = final_k_mod.cluster_centers_
+
+    # give some idea what words are in what clusters
+    for centroid in centroids:
+        count += 1
+        score_this_centroid = {}
+        for word in vectorizer.vocabulary_.keys():
+            score_this_centroid[word] = centroid[vectorizer.vocabulary_[word]]
+        print(count, score_this_centroid)
+        # print(score_this_centroid)
 
     tsne_init = 'pca'
     tsne_perplexity = 20.0
@@ -101,6 +108,7 @@ def final_k_model(X, finalk):
     plt.savefig('plots\\cluster.png')
     plt.show()
 
+    print(final_k_mod)
     return final_k_mod
 
 
@@ -108,22 +116,20 @@ def test_final_k(model, test_set):
     model.predict(test_set)
 
     print(model.labels_)
-    print('ok')
+
+    final_score = silhouette_score(test_set, labels=model.predict(test_set))
+    print(final_score)
 
 
 cleaned_comments_df = tokenize_words(comments_df)
-X_train = fit_vectorizer(cleaned_comments_df)
+vect, X_train = fit_vectorizer(cleaned_comments_df)
 final_k = create_clusters(X_train)
-final_model = final_k_model(X_train, final_k)
+final_model = final_k_model(vect, X_train, final_k)
 
 cleaned_test = tokenize_words(test_comments)
-test_train = fit_vectorizer(cleaned_test)
+vect, test_train = fit_vectorizer(cleaned_test)
 test_final_k(final_model, test_train)
 
-
-# use word2vec to get vectors for the comment data
-# https://stackoverflow.com/questions/49643974/how-to-do-text-classification-using-word2vec
-# vect = Word2Vec(comments_df['TRIP COMMENTS'])
-# vect.train(comments_df['TRIP COMMENTS'], total_examples=len(comments_df), epochs=250)
-# max_dataset_size = len(vect.wv.vectors)
-
+'''The final silhouette score was 0.05 which indicates that there are overlapping clusters. A score 
+near 0 indicates overlap. A score near -1 indicates items being placed in the wrong clusters. A score
+near 1 means the clusters are clearly defined. A reduction of k did not yield better results'''
