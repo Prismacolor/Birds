@@ -42,7 +42,6 @@ for doc in tristate_docs:
     data_state = ''
     for state in statelist:
         if state in doc:
-            print('hooray')
             data_state = state
 
     sample = tailer.head(open(doc, encoding='utf-8', errors='ignore'), 15000)
